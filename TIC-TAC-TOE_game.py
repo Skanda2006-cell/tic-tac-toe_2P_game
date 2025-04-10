@@ -2,10 +2,8 @@ import streamlit as st
 
 # Page setup
 st.set_page_config(page_title="Tic-Tac-Toe", layout="centered")
-st.title("❌ Tic-Tac-Toe ⭕
-
-Play with a friend! Take turns and try to win!")
-
+st.title("❌ Tic-Tac-Toe ⭕")
+st.markdown("Play with a friend! Take turns and try to win!")
 # Initialize game state
 if "board" not in st.session_state:
     st.session_state.board = [""] * 9
