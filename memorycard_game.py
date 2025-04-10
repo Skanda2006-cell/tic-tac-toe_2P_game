@@ -1,67 +1,61 @@
 import streamlit as st
-import random
-import time
 
-# Set up page
-st.set_page_config(page_title="🃏 Memory Game", layout="centered")
-st.title("🧠 Memory Card Game")
-st.write("Flip the cards and try to match all pairs!")
+# Page setup
+st.set_page_config(page_title="Tic-Tac-Toe", layout="centered")
+st.title("❌ Tic-Tac-Toe ⭕
 
-# Initialize game
-if "cards" not in st.session_state:
-    emojis = ['🍎', '🚗', '🐶', '🎵', '🌟', '🏀', '📚', '🎲']
-    cards = emojis * 2
-    random.shuffle(cards)
-    st.session_state.cards = cards
-    st.session_state.revealed = [False] * 16
-    st.session_state.matched = [False] * 16
-    st.session_state.selected = []
-    st.session_state.moves = 0
-    st.session_state.last_action_time = 0
+Play with a friend! Take turns and try to win!")
 
-# Function to reveal or match logic
-def handle_click(i):
-    if st.session_state.revealed[i] or st.session_state.matched[i]:
-        return
-    st.session_state.revealed[i] = True
-    st.session_state.selected.append(i)
+# Initialize game state
+if "board" not in st.session_state:
+    st.session_state.board = [""] * 9
+    st.session_state.current = "X"
+    st.session_state.winner = None
+    st.session_state.win_combo = []
 
-# Handle timed reset for unmatched cards
-if len(st.session_state.selected) == 2:
-    idx1, idx2 = st.session_state.selected
-    if st.session_state.cards[idx1] == st.session_state.cards[idx2]:
-        st.session_state.matched[idx1] = True
-        st.session_state.matched[idx2] = True
-        st.session_state.selected = []
-    else:
-        now = time.time()
-        if st.session_state.last_action_time == 0:
-            st.session_state.last_action_time = now
-        elif now - st.session_state.last_action_time >= 0.7:
-            st.session_state.revealed[idx1] = False
-            st.session_state.revealed[idx2] = False
-            st.session_state.selected = []
-            st.session_state.last_action_time = 0
-            st.session_state.moves += 1
-            st.experimental_rerun()
+# Winning combinations
+winning_combinations = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],  # rows
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],  # cols
+    [0, 4, 8], [2, 4, 6]              # diagonals
+]
 
-# Show card grid
-cols = st.columns(4)
-for i in range(16):
-    with cols[i % 4]:
-        if st.session_state.revealed[i] or st.session_state.matched[i]:
-            st.button(st.session_state.cards[i], key=str(i), disabled=True)
+# Check for winner
+def check_winner():
+    for combo in winning_combinations:
+        a, b, c = combo
+        if st.session_state.board[a] == st.session_state.board[b] == st.session_state.board[c] != "":
+            st.session_state.winner = st.session_state.board[a]
+            st.session_state.win_combo = combo
+            return
+
+# Game grid
+cols = st.columns(3)
+for i in range(9):
+    highlight = "background-color: lightgreen;" if i in st.session_state.win_combo else ""
+    with cols[i % 3]:
+        if st.session_state.board[i] or st.session_state.winner:
+            st.markdown(
+                f"<div style='text-align:center; font-size:40px; {highlight}'>{st.session_state.board[i]}</div>",
+                unsafe_allow_html=True,
+            )
         else:
-            if st.button("❓", key=str(i)):
-                handle_click(i)
+            if st.button(" ", key=i):
+                st.session_state.board[i] = st.session_state.current
+                check_winner()
+                if not st.session_state.winner:
+                    st.session_state.current = "O" if st.session_state.current == "X" else "X"
 
-# Show stats
-st.markdown(f"### Moves: {st.session_state.moves}")
-if all(st.session_state.matched):
-    st.success("🎉 Congratulations! You've matched all the cards!")
+# Status display
+if st.session_state.winner:
+    st.success(f"🎉 Player {st.session_state.winner} wins!")
+elif "" not in st.session_state.board:
+    st.info("🤝 It's a draw!")
+else:
+    st.write(f"Player **{st.session_state.current}**'s turn.")
 
-# Restart game
-if st.button("🔄 Restart Game"):
-    for key in list(st.session_state.keys()):
+# Restart button
+if st.button("🔁 Restart Game"):
+    for key in ["board", "current", "winner", "win_combo"]:
         del st.session_state[key]
     st.experimental_rerun()
